@@ -1,20 +1,35 @@
-// /api/auth/[...nextauth]/route.js
-
 import NextAuth from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
-import GoogleProvider from "next-auth/providers/google";
+import EmailProvider from "next-auth/providers/email";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import clientPromise from "@/app/lib/mongodb";
+import nodemailer from "nodemailer";
 
-const authOptions = {
+// Nodemailer setup
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+        user: process.env.EMAIL_FROM,
+        pass: process.env.GMAIL_APP_PASSWORD,
+    },
+});
+
+const handler = NextAuth({
     providers: [
         GitHubProvider({
             clientId: process.env.GITHUB_ID,
             clientSecret: process.env.GITHUB_SECRET,
         }),
-        GoogleProvider({
-            clientId: process.env.GOOGLE_ID,
-            clientSecret: process.env.GOOGLE_SECRET,
+        EmailProvider({
+            server: {
+                host: "smtp.gmail.com",
+                port: 587,
+                auth: {
+                    user: process.env.EMAIL_FROM,
+                    pass: process.env.GMAIL_APP_PASSWORD,
+                },
+            },
+            from: process.env.EMAIL_FROM,
         }),
     ],
     adapter: MongoDBAdapter(clientPromise),
@@ -27,18 +42,10 @@ const authOptions = {
 
     callbacks: {
         async session({ session, user }) {
-            session.user.id = user.id; // Example: Add user ID to session
+            session.user.id = user.id; // Optionally add user ID to session
             return session;
         },
-        async jwt({ token, user }) {
-            if (user) {
-                token.id = user.id; // Example: Add user ID to token
-            }
-            return token;
-        },
     },
-};
+});
 
-const handler = NextAuth(authOptions);
-
-export { handler as GET, handler as POST, authOptions }; // Export authOptions for use in other files
+export { handler as GET, handler as POST };

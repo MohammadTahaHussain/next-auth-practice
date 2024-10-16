@@ -22,5 +22,6 @@ export default function AuthButton() {
     );
   }
 
-  return <button onClick={() => signIn("github")}>Sign in with GitHub</button>;
+
+  return <button onClick={() => signIn("github")}>Sign in with GitHub</button>
 }
